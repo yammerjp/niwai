@@ -1,6 +1,7 @@
 import { config } from 'dotenv';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { PGlite } from '@electric-sql/pglite';
+import { drizzle } from 'drizzle-orm/pglite';
+import { migrate } from 'drizzle-orm/pglite/migrator';
 import postgres from 'postgres';
 
 config({
@@ -8,12 +9,12 @@ config({
 });
 
 const runMigrate = async () => {
-  if (!process.env.POSTGRES_URL) {
-    throw new Error('POSTGRES_URL is not defined');
-  }
 
-  const connection = postgres(process.env.POSTGRES_URL, { max: 1 });
-  const db = drizzle(connection);
+  const client = new PGlite({
+    dataDir: "./data"
+  });
+  
+  const db = drizzle(client);
 
   console.log('⏳ Running migrations...');
 
@@ -22,6 +23,9 @@ const runMigrate = async () => {
   const end = Date.now();
 
   console.log('✅ Migrations completed in', end - start, 'ms');
+
+  console.log(((await client.query('SELECT * FROM pg_tables')).rows.map(r => r.tablename)));
+
   process.exit(0);
 };
 
